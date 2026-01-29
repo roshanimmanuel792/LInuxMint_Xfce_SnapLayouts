@@ -1,0 +1,6 @@
+# Runtime dependencies
+# NOTE: Install PyGObject via system packages (python3-gi, gir1.2-gtk-3.0).
+
+# Optional: for development and testing
+pytest>=6.0
+pytest-cov>=2.12.0
