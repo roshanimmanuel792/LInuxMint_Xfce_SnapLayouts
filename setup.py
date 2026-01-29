@@ -33,7 +33,7 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=[
-        "PyGObject>=3.40.0",
+        # PyGObject must be installed via system packages (python3-gi)
     ],
     entry_points={
         "console_scripts": [

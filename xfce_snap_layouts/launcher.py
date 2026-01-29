@@ -9,9 +9,9 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GLib
 import subprocess
 
-from ..utils import setup_logging, config_manager
-from ..core import keyboard_hook_manager
-from ..ui import controller
+from xfce_snap_layouts.utils import setup_logging, config_manager
+from xfce_snap_layouts.core import keyboard_hook_manager
+from xfce_snap_layouts.ui import controller
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ class SimpleHotkeyApp(Gtk.Application):
         # Create a hidden window (GTK apps need at least one window)
         window = Gtk.ApplicationWindow(application=self)
         window.set_default_size(1, 1)
-        window.set_hidden(True)
+        window.hide()
         window.set_skip_taskbar_hint(True)
         window.set_skip_pager_hint(True)
         
