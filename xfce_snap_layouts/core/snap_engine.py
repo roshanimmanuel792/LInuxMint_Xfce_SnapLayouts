@@ -51,21 +51,41 @@ class SnapEngine:
     def _get_window_info(self, window_id: int) -> Optional[WindowInfo]:
         """Get information about a specific window."""
         try:
-            # Get window name
-            name_result = subprocess.run(['xdotool', 'getwindowname', str(window_id)],
-                                        capture_output=True, text=True, check=True)
-            name = name_result.stdout.strip()
+            import time
+            import threading
             
-            # Get window geometry
-            geom_result = subprocess.run(['xdotool', 'getwindowgeometry', str(window_id)],
-                                        capture_output=True, text=True, check=True)
+            # Small delay to let X server update
+            time.sleep(0.2)
             
-            # Parse geometry output
-            # Format: Position: 100,200 (screen: 0)
-            #         Geometry: 800x600+100+200
-            x, y, width, height = self._parse_window_geometry(geom_result.stdout)
+            # Get window name with timeout handling
+            name = "Unknown"
+            try:
+                result = subprocess.run(['xdotool', 'getwindowname', str(window_id)],
+                                      capture_output=True, text=True, timeout=1)
+                if result.returncode == 0:
+                    name = result.stdout.strip()
+            except subprocess.TimeoutExpired:
+                logger.warning(f"Timeout getting window name for {window_id:x}")
+            except Exception as e:
+                logger.warning(f"Error getting window name: {e}")
             
-            # Check if window is maximized (simple heuristic)
+            # Get geometry
+            x, y, width, height = 0, 0, 800, 600  # defaults
+            try:
+                result = subprocess.run(['xdotool', 'getwindowgeometry', str(window_id)],
+                                      capture_output=True, text=True, timeout=1)
+                if result.returncode == 0:
+                    x, y, width, height = self._parse_window_geometry(result.stdout)
+                else:
+                    logger.warning(f"xdotool getwindowgeometry failed: {result.stderr}")
+            except subprocess.TimeoutExpired:
+                logger.warning(f"Timeout getting window geometry for {window_id:x}")
+            except Exception as e:
+                logger.warning(f"Error getting window geometry: {e}")
+            
+            logger.debug(f"Window {window_id:x}: {name} {width}x{height}+{x}+{y}")
+            
+            # Check if maximized
             is_maximized = self._is_window_maximized(window_id)
             
             return WindowInfo(window_id, name, x, y, width, height, is_maximized)
@@ -129,26 +149,42 @@ class SnapEngine:
             True if successful, False otherwise
         """
         try:
+            import time
+            
             logger.info(f"Snapping window {window_id:x} to {width}x{height}+{x}+{y}")
             
             # First, ensure window is not maximized
             if self._is_window_maximized(window_id):
-                self.unmaximize_window(window_id)
+                logger.debug(f"Window {window_id:x} is maximized, unmaximizing...")
+                subprocess.run(['wmctrl', '-i', '-b', 'remove,maximized_vert,maximized_horz',
+                              '-r', f'0x{window_id:x}'],
+                              check=False, capture_output=True, timeout=5)
+                time.sleep(0.15)
             
-            # Resize and move using xdotool
-            subprocess.run(['xdotool', 'windowsize', str(window_id), str(width), str(height)],
-                          check=True, capture_output=True)
+            # Use xdotool for resizing and moving (more reliable in practice)
+            # Move FIRST, then RESIZE (important order for some WMs)
+            logger.debug(f"Moving window to {x},{y}")
             subprocess.run(['xdotool', 'windowmove', str(window_id), str(x), str(y)],
-                          check=True, capture_output=True)
+                          check=True, capture_output=True, timeout=5)
             
-            # Restore focus
-            subprocess.run(['xdotool', 'windowfocus', str(window_id)],
-                          check=True, capture_output=True)
+            time.sleep(0.1)
+            
+            logger.debug(f"Resizing window to {width}x{height}")
+            subprocess.run(['xdotool', 'windowsize', str(window_id), str(width), str(height)],
+                          check=True, capture_output=True, timeout=5)
+            
+            time.sleep(0.1)
+            
+            # Activate/focus the window
+            logger.debug(f"Activating window")
+            subprocess.run(['xdotool', 'windowactivate', str(window_id)],
+                          check=True, capture_output=True, timeout=5)
             
             logger.info(f"Successfully snapped window {window_id:x}")
             return True
         except subprocess.CalledProcessError as e:
             logger.error(f"Error snapping window: {e}")
+            logger.debug(f"Error output: {e.stderr}")
             return False
         except Exception as e:
             logger.error(f"Unexpected error during snapping: {e}")

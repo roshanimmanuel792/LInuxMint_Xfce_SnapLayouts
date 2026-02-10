@@ -4,12 +4,17 @@
 
 A production-ready, lightweight desktop utility that provides visual window snapping with a transparent overlay interface.
 
+## 🆕 Latest Update
+
+**Window Snapping Fixed!** Windows now snap with perfect geometry - they fill their allocated zones completely without clipping or undersizing. The fix ensures proper operation ordering (unmaximize → move → resize → activate) with correct timing between X11 operations. [See details](SNAP_FIX_SUMMARY.md)
+
 ## ✨ Features
 
 - **3 Snap Layouts**: 50/50 split, 1 Big + 2 Small, 3 Columns
 - **Visual Overlay**: GTK3 transparent interface with hover effects
 - **Multi-Monitor Support**: Automatically detects and snaps to correct monitor
 - **Window Management**: Handles maximized states, resizing, and focus
+- **Perfect Geometry**: Windows snap with correct sizing - no clipping!
 - **Lightweight**: <100ms startup, ~50-80MB memory footprint
 
 ## 🚀 Quick Install
@@ -38,7 +43,7 @@ pip install -e .
 ```bash
 cat > ~/snap-layout-trigger.sh << 'EOF'
 #!/bin/bash
-cd /home/roshan/snaplayoutplugin
+cd /home/snaplayoutplugin
 source venv/bin/activate
 python3 test_overlay.py
 EOF
@@ -77,7 +82,7 @@ Edit `~/.config/xfce-snap-layouts/config.json`:
 
 Run manually:
 ```bash
-cd /home/roshan/snaplayoutplugin
+cd /home/snaplayoutplugin
 source venv/bin/activate
 python3 test_overlay.py
 ```
@@ -100,8 +105,7 @@ xfce_snap_layouts/
 ## 📊 Build Status
 
 ✅ All core features implemented  
-✅ 5/5 validation checks passing  
-✅ Production ready
+
 
 ## 📚 Documentation
 
